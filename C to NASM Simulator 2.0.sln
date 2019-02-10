@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2050
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C to NASM Simulator 2.0", "C to NASM Simulator 2.0\C to NASM Simulator 2.0.csproj", "{8B745237-42CE-4D2C-BFF2-4698CB69C9C0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B745237-42CE-4D2C-BFF2-4698CB69C9C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B745237-42CE-4D2C-BFF2-4698CB69C9C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B745237-42CE-4D2C-BFF2-4698CB69C9C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B745237-42CE-4D2C-BFF2-4698CB69C9C0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FF9B78BD-BAD3-4C1B-9C22-D5DE5BF4F01D}
+	EndGlobalSection
+EndGlobal
