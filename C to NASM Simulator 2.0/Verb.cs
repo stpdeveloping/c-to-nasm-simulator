@@ -12,6 +12,7 @@ namespace C_to_NASM_Simulator_2._0
         Variable,
         AssignInstruction,
         ArithmeticInstruction,
-        Condition
+        Condition,
+        BlockClosing
     }
 }

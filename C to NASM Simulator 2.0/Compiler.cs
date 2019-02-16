@@ -10,17 +10,36 @@ namespace C_to_NASM_Simulator_2._0
     class Compiler
     {
         public static List<string> initVars = new List<string>();
+        public static int labelsCount = -1;
+        public static int labelsOutCount = 0;
+        public static int conditionEndCount = 0;
+        public static int bracketBalance = 0;
+        public static bool elseFlag = false;
+        //public static List<string> f
+
         public string Output = String.Empty;
-        private static int labelsCount = 0;
         public Compiler(string codeLine)
         {
             switch (VerbCheck(codeLine))
             {
+                case Verb.BlockClosing:
+                    bracketBalance--;
+                    if (bracketBalance == 0)
+                        if (elseFlag)
+                        {
+                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}conditionEnd{conditionEndCount}:{Environment.NewLine}";
+                            elseFlag = false;
+                            conditionEndCount++;
+                        }
+                        else
+                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}labelOut{labelsOutCount}:{Environment.NewLine}";                        
+                    break;
                 case Verb.Variable:
                     Output = NasmVar(codeLine, true);
                     if(!String.IsNullOrEmpty(Output))
                         if (!Output.Substring(0, 3).Equals("MOV"))
                             initVars.Add(Output);
+                    
                     break;
                 case Verb.AssignInstruction:
                     Output = NasmVar(codeLine, false);
@@ -33,26 +52,51 @@ namespace C_to_NASM_Simulator_2._0
                     break;
             }
         }
+
         private string NasmCondition(string condition)
         {
+            string _out = string.Empty;
+            if (condition.Contains("else") && !condition.Contains("else if"))
+            {
+                elseFlag = true;
+                bracketBalance++;
+            }
+            
             if (condition.Contains("if"))
             {
+                if (!condition.Contains("else if"))
+                    conditionEndCount++;
+                bracketBalance++;
+                if (bracketBalance<2)
+                labelsOutCount++;
+                labelsCount++;         
+                var nasmJumps = new Dictionary<string, string>
+                {
+                    { "==", "JE" },
+                    { "!=", "JNE" },
+                    { ">", "JG"},
+                    { ">=", "JGE" },
+                    { "<", "JL" },
+                    { "<=", "JLE" }
+                };                
                 List<string> conditionSigns = new List<string> { "==", "!=", ">=", "<=", ">", "<" };
                 List<string> limiters = new List<string> { "&&", "||", ")" };
-                string input = condition.InnerString(condition.IndexOf("(") + 1, condition.LastIndexOf(")") + 1); 
-                string temp = String.Empty;
-                foreach(char c in input)
+                string input = condition.InnerString(condition.IndexOf("(") + 1, condition.LastIndexOf(")") + 1);
+                string temp = string.Empty;
+                string previousBoolSign = string.Empty;
+                int andCounter = 0;
+                foreach (char c in input)
                 {
                     temp += c;
-                    string var = String.Empty;
+                    string var = string.Empty;
                     string conditionSign = conditionSigns
                         .Where(sign => temp.Contains(sign) && sign.Length == 2)
                         .FirstOrDefault();
-                    conditionSign = String.IsNullOrEmpty(conditionSign) ? 
+                    conditionSign = string.IsNullOrEmpty(conditionSign) ? 
                          conditionSigns.Where(sign => temp.Contains(sign))
                         .FirstOrDefault() : conditionSign;
-                    string value = String.Empty;
-                    if (!String.IsNullOrEmpty(conditionSign))
+                    string value = string.Empty;
+                    if (!string.IsNullOrEmpty(conditionSign))
                     {
                         var = temp.InnerString(0, temp.IndexOf(conditionSign)).Trim();
                         foreach (string limiter in limiters)
@@ -65,31 +109,58 @@ namespace C_to_NASM_Simulator_2._0
                                     value = temp.InnerString(temp.IndexOf("<") + 1, temp.IndexOf(limiter)).Trim();
                                 else if (conditionSign.Contains(">"))
                                     value = temp.InnerString(temp.IndexOf(">") + 1, temp.IndexOf(limiter)).Trim();
-                                string boolSign = limiter.Equals("||") || limiter.Equals("&&") ? limiter : String.Empty;
-                                if(!String.IsNullOrEmpty(boolSign))
-                                    switch(boolSign)
-                                    {
-                                        case "&&":
-                                            break;
-                                        case "||":
-                                            break;
-                                    }
-                                else { }
-                                temp = String.Empty;
+                                value = !value.ElementAt(0).Equals("'") && !Char.IsDigit(value.ElementAt(0)) ?
+                                    $"[{value}]" : value;                               
+                                string nasmJump = string.Empty;
+                                nasmJumps.TryGetValue(conditionSign, out nasmJump);
+                                _out+= $"MOV BX, [{var}]{Environment.NewLine}CMP BX, {value}{Environment.NewLine}";                               
+                                switch (limiter)
+                                {
+                                    case "||":
+                                        if (previousBoolSign.Equals("&&"))
+                                            labelsCount++;
+                                        _out += $"{nasmJump} label{labelsCount}{Environment.NewLine}";
+                                        previousBoolSign = limiter;
+                                        break;
+                                    case "&&":
+                                        if (previousBoolSign.Equals("||"))
+                                        {
+                                            _out += $"{nasmJump} label{labelsCount}{Environment.NewLine}";
+                                            _out += $"JMP labelOut{labelsOutCount}{Environment.NewLine}";
+                                            _out += $"label{ labelsCount}:{ Environment.NewLine}";                                      
+                                        }
+                                        else
+                                        {
+                                            andCounter++;
+                                            if(andCounter!=1)
+                                            labelsCount++;
+                                            _out += $"{nasmJump} label{labelsCount}{Environment.NewLine}";
+                                            _out += $"JMP labelOut{labelsOutCount}{Environment.NewLine}";
+                                            _out += $"label{ labelsCount}:{ Environment.NewLine}";
+                                        }
+                                        previousBoolSign = limiter;
+                                        break;
+                                    default:
+                                        if (previousBoolSign.Equals("&&"))                                        
+                                            labelsCount++;
+                                        _out += $"{nasmJump} label{labelsCount}{Environment.NewLine}";
+                                        _out += $"JMP labelOut{labelsOutCount}{Environment.NewLine}";
+                                        _out += $"label{ labelsCount}:{ Environment.NewLine}";                                        
+                                        break;
+                                }                               
+                                temp = string.Empty;
                             }
                         }
                     }
                 }
-            }
-            else
-            {
-
-            }
-            return "";
+            }          
+            return _out;
         }
         private Verb VerbCheck(string verb)
         {
-            if(verb.Length >= 4)
+            if (verb.ElementAt(0).Equals('}'))
+                return Verb.BlockClosing;
+            if (verb.Length >= 4)
             if (verb.Substring(0, 2).Equals("if") || verb.Substring(0, 4).Equals("else"))
                 return Verb.Condition;
             if (!verb.Contains(';'))
@@ -208,7 +279,7 @@ namespace C_to_NASM_Simulator_2._0
             string varType = String.Empty;
             if (equat.IsVarDeclaration())
             {
-                varName = equat.InnerString(equat.IndexOf(' ') + 1, equat.IndexOf('=') - 1);
+                varName = equat.InnerString(equat.IndexOf(' ') + 1, equat.IndexOf('=')).Trim();
                 varType = equat.InnerString(0, equat.IndexOf(' '));
                 if (initVars.SingleOrDefault(s => s.Contains(varName + " ")) != null)
                     return null;
@@ -291,10 +362,9 @@ namespace C_to_NASM_Simulator_2._0
                     _out += "MOV [" + varName + "], AX";
                     continue;
                 }
-                if (e.Current.Equals("-") && isInParenthese)
-                {
-                    _out += "SUB AX, ";
-                }
+                if (e.Current.Equals("-") && isInParenthese)               
+                    _out += "SUB AX, ";     
+                
                 else if (e.Current.Equals("-") && !isInParenthese)
                 {
                     if (parentheseCount != 0)
@@ -302,9 +372,8 @@ namespace C_to_NASM_Simulator_2._0
                     isPlus = false;
                 }
                 else if (e.Current.Equals("+") && isInParenthese)
-                {
                     _out += "ADD AX, ";
-                }
+
                 else if (e.Current.Equals("+") && !isInParenthese)
                 {
                     _out += Environment.NewLine;

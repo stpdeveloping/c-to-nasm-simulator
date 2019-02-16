@@ -66,14 +66,14 @@ namespace C_to_NASM_Simulator_2._0
 
         private void CompileButton_Click(object sender, RoutedEventArgs e)
         {
+            Utils.RefreshCompiler();
             ObservableLines.Clear();
             string input = new TextRange(InputText.Document.ContentStart, InputText.Document.ContentEnd).Text;
             var lines = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
             var compiledLines = new List<String>();
             lines.ForEach(line => compiledLines.AddRange(new Compiler(line).Output
                 .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)));
-            compiledLines.ForEach(line => ObservableLines.Add(line));
-            Compiler.initVars.Clear();
+            Utils.OutputFix(compiledLines).ForEach(line => ObservableLines.Add(line));
         }
     }
 }
