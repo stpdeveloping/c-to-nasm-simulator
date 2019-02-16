@@ -8,7 +8,7 @@ namespace C_to_NASM_Simulator_2._0
 {
     class Utils
     {
-        public static List<string> OutputFix(List<string> stdOutput)
+        public static List<string> ifElseFix(List<string> stdOutput)
         {
             int conditionCounter = Compiler.conditionEndCount;
             var conditions = new List<int>();

@@ -73,7 +73,7 @@ namespace C_to_NASM_Simulator_2._0
             var compiledLines = new List<String>();
             lines.ForEach(line => compiledLines.AddRange(new Compiler(line).Output
                 .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)));
-            Utils.OutputFix(compiledLines).ForEach(line => ObservableLines.Add(line));
+            Utils.ifElseFix(compiledLines).ForEach(line => ObservableLines.Add(line));
         }
     }
 }
