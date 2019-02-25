@@ -1,19 +1,12 @@
-﻿using System;
+﻿using C_to_NASM_Simulator_2._0.Core;
+using C_to_NASM_Simulator_2._0.Utility;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace C_to_NASM_Simulator_2._0
 {
@@ -71,9 +64,18 @@ namespace C_to_NASM_Simulator_2._0
             string input = new TextRange(InputText.Document.ContentStart, InputText.Document.ContentEnd).Text;
             var lines = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
             var compiledLines = new List<String>();
-            lines.ForEach(line => compiledLines.AddRange(new Compiler(line).Output
-                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)));
-            Utils.ifElseFix(compiledLines).ForEach(line => ObservableLines.Add(line));
+            try
+            {
+                lines.ForEach(line => compiledLines.AddRange(new Compiler(line).Output
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)));
+            }
+            catch (NullReferenceException)
+            {
+                MessageBox.Show("Incorrect input!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            Utils.IfElseFix(Utils.StartLabelFix(compiledLines))
+                .ForEach(line => ObservableLines.Add(line));
+            OutputList.SelectedIndex = ObservableLines.IndexOf("START:");
         }
     }
 }

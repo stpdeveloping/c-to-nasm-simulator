@@ -1,14 +1,23 @@
-﻿using System;
+﻿using C_to_NASM_Simulator_2._0.Core;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace C_to_NASM_Simulator_2._0
+namespace C_to_NASM_Simulator_2._0.Utility
 {
     class Utils
     {
-        public static List<string> ifElseFix(List<string> stdOutput)
+        public static List<string> StartLabelFix(List<string> stdOutput)
+        {
+            if (stdOutput.FirstOrDefault(line => line.Equals("RET")) != null)
+            {
+                int lastRetIndex = stdOutput.FindLastIndex(line => line.Equals("RET"));
+                stdOutput.Insert(lastRetIndex + 1, "START:");
+            }
+            else stdOutput.Insert(0, "START:");
+            return stdOutput;
+        }
+
+        public static List<string> IfElseFix(List<string> stdOutput)
         {
             int conditionCounter = Compiler.conditionEndCount;
             var conditions = new List<int>();
@@ -38,9 +47,16 @@ namespace C_to_NASM_Simulator_2._0
                 });
             return stdOutput;
         }
+        public static bool VarExists(string varName)
+        {
+            if (Compiler.initVars.SingleOrDefault(s => s.Substring(0, varName.Length).Equals(varName)) == null)
+                return false;
+            return true;
+        }
         public static void RefreshCompiler()
         {
             Compiler.initVars.Clear();
+            Compiler.initProcedures.Clear();
             Compiler.labelsCount = -1;
             Compiler.labelsOutCount = 0;
             Compiler.conditionEndCount = 0;

@@ -1,27 +1,38 @@
-﻿using System;
+﻿using C_to_NASM_Simulator_2._0.Types;
+using C_to_NASM_Simulator_2._0.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace C_to_NASM_Simulator_2._0
+namespace C_to_NASM_Simulator_2._0.Core
 {
     class Compiler
     {
         public static List<string> initVars = new List<string>();
+        public static Dictionary<string, int> initProcedures = new Dictionary<string, int>();
         public static int labelsCount = -1;
         public static int labelsOutCount = 0;
         public static int conditionEndCount = 0;
         public static int bracketBalance = 0;
-        public static bool elseFlag = false;
-        //public static List<string> f
 
-        public string Output = String.Empty;
+        private static List<ProcVar> tempArgs = new List<ProcVar>();
+        private static bool procedureFlag = false;
+        private static bool ifBlock = false;
+        private static bool elseFlag = false;
+
+        public string Output = string.Empty;
+        
         public Compiler(string codeLine)
         {
             switch (VerbCheck(codeLine))
             {
+                case Verb.ProcDeclaration:
+                    Output = ProcInit(codeLine);
+                    break;
+                case Verb.ProcCall:
+                    Output = ProcCall(codeLine);
+                    break;
                 case Verb.BlockClosing:
                     bracketBalance--;
                     if (bracketBalance == 0)
@@ -31,15 +42,30 @@ namespace C_to_NASM_Simulator_2._0
                             elseFlag = false;
                             conditionEndCount++;
                         }
-                        else
-                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}labelOut{labelsOutCount}:{Environment.NewLine}";                        
+                        else if(ifBlock && !elseFlag)
+                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}labelOut{labelsOutCount}:{Environment.NewLine}";
+                    if (procedureFlag && tempArgs.Any())
+                    {
+                        tempArgs.Reverse();
+                        tempArgs.ForEach(arg => Output += $"MOV AX, " +
+                        $"[{NasmVar($"{arg.Type} {arg.Name};", true).InnerString(0, NasmVar($"{arg.Type} {arg.Name};", true).IndexOf(" ")).Trim()}]" +
+                            $"{Environment.NewLine}PUSH AX{Environment.NewLine}");
+                        Output += $"RET{ Environment.NewLine}";
+                        procedureFlag = false;
+                        tempArgs.Clear();
+                    }
+                    else if (procedureFlag)
+                    {
+                        Output += $"RET{ Environment.NewLine}";
+                        procedureFlag = false;
+                        tempArgs.Clear();
+                    }
                     break;
                 case Verb.Variable:
                     Output = NasmVar(codeLine, true);
                     if(!String.IsNullOrEmpty(Output))
                         if (!Output.Substring(0, 3).Equals("MOV"))
-                            initVars.Add(Output);
-                    
+                            initVars.Add(Output);                    
                     break;
                 case Verb.AssignInstruction:
                     Output = NasmVar(codeLine, false);
@@ -53,9 +79,132 @@ namespace C_to_NASM_Simulator_2._0
             }
         }
 
+        private Verb VerbCheck(string verb)
+        {
+            if (verb.ElementAt(0).Equals('}'))
+                return Verb.BlockClosing;
+            if (verb.Substring(0, 4).Equals("void"))
+                return Verb.ProcDeclaration;
+            if (verb.Length >= 4)
+                if (verb.Substring(0, 2).Equals("if") || verb.Substring(0, 4).Equals("else"))
+                    return Verb.Condition;
+            if (!verb.Contains(';'))
+                return Verb.Unidentified;
+            if (verb.HasEquatChar())
+                return Verb.ArithmeticInstruction;
+            if (verb.IsVarDeclaration())
+                return Verb.Variable;
+            if (verb.Contains(" = "))
+                return Verb.AssignInstruction;
+            if (verb.Contains("(") && verb.Contains(")"))
+                return Verb.ProcCall;
+            return Verb.Unidentified;
+        }
+
+        private string ProcInit(string procDeclaration)
+        {
+            string _out = string.Empty;
+            procedureFlag = true;
+            string procName = procDeclaration.InnerString(procDeclaration.IndexOf("d") + 1, procDeclaration.IndexOf("(")).Trim();
+            string _args = procDeclaration.InnerString(procDeclaration.IndexOf("(") + 1, procDeclaration.IndexOf(")") + 1).Replace(" ", "");
+            string temp = string.Empty;
+            _args.AsEnumerable().ToList().ForEach(ch =>
+            {
+                if (!ch.Equals(',') && !ch.Equals(')'))
+                    temp += ch;
+                else
+                {
+                    if (!string.IsNullOrEmpty(temp)) 
+                    tempArgs.Add(new ProcVar
+                    {
+                        Type = temp.InnerString(0, temp.IndexOf("&")),
+                        Name = temp.InnerString(temp.IndexOf("&") + 1, temp.Length)
+                    });
+                    temp = string.Empty;
+                }
+            });
+            tempArgs.Reverse();
+            _out += $"{procName}:{Environment.NewLine}";
+            bool validation = true;
+            tempArgs.ForEach(arg =>
+            {
+                if (arg.Type.Equals("int"))
+                {
+                    _out += $"POP AX{Environment.NewLine}{NasmVar($"{arg.Type} {arg.Name};", true)}{Environment.NewLine}" +
+                    $"MOV [{NasmVar($"{arg.Type} {arg.Name};", true).InnerString(0, NasmVar($"{arg.Type} {arg.Name};", true).IndexOf(" ")).Trim()}], AX" +
+                    $"{Environment.NewLine}";
+                    initVars.Add(NasmVar($"{arg.Type} {arg.Name};", true));
+                }
+                else
+                {
+                    _out = string.Empty;
+                    validation = false;
+                }
+            });
+            if (!validation) tempArgs.Clear();
+            else initProcedures.Add(procName, tempArgs.Count);
+            return string.IsNullOrEmpty(_out) || !validation ? null : _out;
+        }
+        private string ProcCall(string procCalling)
+        {
+            string _out = string.Empty;
+            bool validation = true;
+            string procName = procCalling.InnerString(0, procCalling.IndexOf("(")).Trim();
+            string _args = procCalling.InnerString(procCalling.IndexOf("(") + 1, procCalling.IndexOf(")") + 1)
+                .Replace(" ", "");
+            string temp = string.Empty;
+            _args.AsEnumerable().ToList().ForEach(ch =>
+            {
+                string varName = string.Empty;
+                string varType = string.Empty;
+                temp += ch;
+                if (ch.Equals(',') || ch.Equals(')'))
+                {
+                    varName = temp.InnerString(0, temp.IndexOf(ch)).Trim();
+                    if (!_args.Equals(")"))
+                    {
+                        if (!Utils.VarExists(varName)) validation = false;
+                        if (initVars.FirstOrDefault
+                        (str => str.InnerString(0, str.IndexOf(" ")).Equals(varName) &&
+                        str.InnerString(str.IndexOf(" ") + 1, str.LastIndexOf(" ")).Equals("DW")) == null)
+                            validation = false;
+                        if (!initProcedures.ContainsKey(procName)) validation = false;
+                        tempArgs.Add(new ProcVar
+                        {
+                            Type = "int",
+                            Name = varName
+                        });
+                    }
+                    temp = string.Empty;
+                }
+            });
+            initProcedures.TryGetValue(procName, out int argsCount);
+            if (argsCount > tempArgs.Count || argsCount < tempArgs.Count)
+                validation = false;
+            if(validation)
+                tempArgs.ForEach(arg =>
+                {
+                    _out += $"MOV AX, [{NasmVar($"{arg.Type} {arg.Name};", true).InnerString(0, NasmVar($"{arg.Type} {arg.Name};", true).IndexOf(" ")).Trim()}]" +
+                        $"{Environment.NewLine}PUSH AX{Environment.NewLine}";
+                });
+            else
+            return null;
+            _out += $"CALL {procName}{Environment.NewLine}";
+            tempArgs.Reverse();
+            tempArgs.ForEach(arg =>
+            {
+                _out += $"POP AX{Environment.NewLine}" +
+                $"MOV [{NasmVar($"{arg.Type} {arg.Name};", true).InnerString(0, NasmVar($"{arg.Type} {arg.Name};", true).IndexOf(" ")).Trim()}], AX" +
+                $"{Environment.NewLine}";
+            });
+            tempArgs.Clear();
+            return _out;
+        }
+
         private string NasmCondition(string condition)
         {
             string _out = string.Empty;
+            ifBlock = true;
             if (condition.Contains("else") && !condition.Contains("else if"))
             {
                 elseFlag = true;
@@ -99,6 +248,8 @@ namespace C_to_NASM_Simulator_2._0
                     if (!string.IsNullOrEmpty(conditionSign))
                     {
                         var = temp.InnerString(0, temp.IndexOf(conditionSign)).Trim();
+                        if (!Utils.VarExists(var))
+                            return null;
                         foreach (string limiter in limiters)
                         {
                             if (temp.Contains(limiter))
@@ -109,8 +260,10 @@ namespace C_to_NASM_Simulator_2._0
                                     value = temp.InnerString(temp.IndexOf("<") + 1, temp.IndexOf(limiter)).Trim();
                                 else if (conditionSign.Contains(">"))
                                     value = temp.InnerString(temp.IndexOf(">") + 1, temp.IndexOf(limiter)).Trim();
-                                value = !value.ElementAt(0).Equals("'") && !Char.IsDigit(value.ElementAt(0)) ?
-                                    $"[{value}]" : value;                               
+                                if (!value.ElementAt(0).Equals("'") && !Char.IsDigit(value.ElementAt(0)))
+                                    if (!Utils.VarExists(value))
+                                        return null;
+                                    else value = $"[{value}]";                               
                                 string nasmJump = string.Empty;
                                 nasmJumps.TryGetValue(conditionSign, out nasmJump);
                                 _out+= $"MOV BX, [{var}]{Environment.NewLine}CMP BX, {value}{Environment.NewLine}";                               
@@ -155,31 +308,14 @@ namespace C_to_NASM_Simulator_2._0
                 }
             }          
             return _out;
-        }
-        private Verb VerbCheck(string verb)
-        {
-            if (verb.ElementAt(0).Equals('}'))
-                return Verb.BlockClosing;
-            if (verb.Length >= 4)
-            if (verb.Substring(0, 2).Equals("if") || verb.Substring(0, 4).Equals("else"))
-                return Verb.Condition;
-            if (!verb.Contains(';'))
-                return Verb.Unidentified;
-            if (verb.HasEquatChar())
-                return Verb.ArithmeticInstruction;
-            if (verb.IsVarDeclaration())
-                return Verb.Variable;
-            if (verb.Contains(" = "))
-                return Verb.AssignInstruction;           
-            return Verb.Unidentified;
-        }
+        }       
         private string VarAssign(string varName, string varValue, bool typeDef)
         {
             if (Char.IsLetter(varValue.ElementAt(0)))
-                if (initVars.SingleOrDefault(s => s.Substring(0, varValue.Length).Equals(varValue)) == null)
+                if (!Utils.VarExists(varValue))
                     return null;
                     if (!typeDef)
-                if (initVars.SingleOrDefault(s => s.Substring(0, varName.Length).Equals(varName)) == null)
+                if (!Utils.VarExists(varName))
                     return null;          
             if (Char.IsLetter(varValue.ElementAt(0)))
             {
@@ -227,8 +363,8 @@ namespace C_to_NASM_Simulator_2._0
                         return val > 255 ? null : "MOV AL, 0" + Environment.NewLine + "MOV AL, " + varValue
                         + Environment.NewLine + "MOV [" + varName + "], AL";
                     if (declaredVar.Contains(" DW ") || declaredVar.Contains(" RESW "))
-                        return val > 65535 || val == int.MinValue ? null : "MOV AL, 0" + Environment.NewLine + "MOV AL, " 
-                            + varValue + Environment.NewLine + "MOV [" + varName + "], AL";
+                        return val > 65535 || val == int.MinValue ? null : "MOV AX, 0" + Environment.NewLine + "MOV AX, " 
+                            + varValue + Environment.NewLine + "MOV [" + varName + "], AX";
                 }
             }
             return null;
@@ -503,9 +639,6 @@ namespace C_to_NASM_Simulator_2._0
                             _arrName = inputVar.InnerString(0, inputVar.IndexOf('['));
                             if (_arrName.Contains(' ')) return null;
                             else return ArrValAssign(_arrName, arrValue, arrValIndex);
-                            //_arrName = inputVar.InnerString(firstSpace + 1, inputVar.IndexOf(']') + 1);
-                            //if (Char.IsLetter(arrValue.ElementAt(0))) 
-                            //return VarAssign(_arrName, arrValue);
                         }
                         return NasmArr(varType, _arrName, null, _arrLength, false);
                     }

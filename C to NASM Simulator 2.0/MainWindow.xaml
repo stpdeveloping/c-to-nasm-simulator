@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:C_to_NASM_Simulator_2._0"
         mc:Ignorable="d"
         Title="C to NASM Simulator" Height="450" Width="800" FontFamily="Segoe UI Semilight" Icon="Resources/icon.png" 
         WindowStartupLocation="CenterScreen">
@@ -22,9 +21,12 @@
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
         <RichTextBox x:Name="InputText" Grid.Column="1" Grid.Row="1" FontSize="15" TextChanged="InputText_TextChanged" />
-        <Button x:Name="CompileButton" Height="30" Content="Compile" 
-                Grid.Column="1" Grid.Row="2" Margin="0, 12, 0, 0" FontSize="16" Click="CompileButton_Click"/>
-        <ListView x:Name="OutputList" Grid.Column="2" Grid.Row="1" Grid.RowSpan="2" Width="194" Margin="12, 0, 0, 0">
+        <Button x:Name="CompileButton" Grid.Column="1" Grid.Row="2" 
+                Padding="0, 5, 0, 5" Margin="0, 12, 0, 0" FontSize="16" 
+                Click="CompileButton_Click">
+            <Image Height="24" Source="Resources/compile.png"/>
+        </Button>
+        <ListView x:Name="OutputList" Grid.Column="2" Grid.Row="1" Width="180" Margin="12, 0, 0, 0">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
@@ -33,5 +35,41 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <Button x:Name="Reset" FontSize="15" Grid.Column="2" Grid.Row="2" Padding="25, 0, 25, 0" 
+                Margin="12, 12, 0, 0" HorizontalAlignment="Left">
+            <Image Height="28" Source="Resources/restart.png"/>
+        </Button>
+        <Button x:Name="NextCmdButton" Grid.Column="2" Padding="25, 0, 25, 0" Grid.Row="2" 
+                Margin="0, 12, 0, 0" HorizontalAlignment="Right">
+            <Image Height="27" Source="Resources/next.png"/>
+        </Button>
+        <Grid Grid.Column="3" Grid.Row="1" Margin="12, 0, 0, 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Label Grid.Column="1" Grid.Row="0" Content="Registers" HorizontalAlignment="Center" 
+                   Margin="0, 0, 0, 3"/>
+            <Label Grid.Column="0" Grid.Row="1" Margin="0, 0, 6, 0" Content="AX:"/>
+            <TextBox Grid.Column="1" Grid.Row="1" Padding="0, 0, 46, 0" IsEnabled="False"/>
+            <Label Grid.Column="0" Grid.Row="2" Content="BX:" Margin="0, 6, 0, 0"/>
+            <TextBox Grid.Column="1" Grid.Row="2" Margin="0, 6, 0, 0" IsEnabled="False" />
+            <Label Grid.Column="1" Grid.Row="3" Content="Flags" Margin="0, 0, 0, -3" HorizontalAlignment="Center" />
+            <Label Grid.Column="0" Grid.Row="4" Content="ZF:" Margin="0, 6, 0, 0"/>
+            <TextBox Grid.Column="1" Grid.Row="4" Margin="0, 6, 0, 0" IsEnabled="False" />
+            <Label Grid.Column="0" Grid.Row="5" Content="OF:" Margin="0, 6, 0, 0"/>
+            <TextBox Grid.Column="1" Grid.Row="5" Margin="0, 6, 0, 0" IsEnabled="False" />
+            <Label Grid.Column="0" Grid.Row="6" Content="SF:" Margin="0, 6, 0, 0"/>
+            <TextBox Grid.Column="1" Grid.Row="6" Margin="0, 6, 0, 0" IsEnabled="False" />
+        </Grid>
     </Grid>
 </Window>
