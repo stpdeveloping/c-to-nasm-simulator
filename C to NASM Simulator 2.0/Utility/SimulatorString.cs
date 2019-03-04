@@ -8,16 +8,27 @@ namespace C_to_NASM_Simulator_2._0.Utility
     {
         public static bool HasEquatChar(this String str)
         {
-            if ((str.Contains("+") || str.Contains("-") || str.Contains("*") || str.Contains("/"))  && !str.Contains("'"))
+            if ((str.Contains("+") || str.Contains("-") 
+                || str.Contains("*") || str.Contains("/"))  
+                && !str.Contains("'"))
                     return true;
             return false;
         }
         public static bool IsVarDeclaration(this String str)
         {
-            if(str.Substring(0, 3).Equals("int") || str.Substring(0, 5).Equals("float")
-                || str.Substring(0, 6).Equals("double") || str.Substring(0, 4).Equals("bool")
+            if(str.Length>=3)
+                if (str.Substring(0, 3).Equals("int"))
+                    return true;
+            if (str.Length >= 4)
+                if (str.Substring(0, 4).Equals("bool")
                 || str.Substring(0, 4).Equals("char"))
-                return true;
+                    return true;
+            if (str.Length >= 5)
+                if (str.Substring(0, 5).Equals("float"))
+                    return true;
+            if(str.Length>=6)
+                if (str.Substring(0, 6).Equals("double"))
+                    return true;
             return false;
         }
         public static string InnerString(this String str, int startIndex, int endIndex)

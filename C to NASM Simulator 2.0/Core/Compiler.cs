@@ -83,11 +83,13 @@ namespace C_to_NASM_Simulator_2._0.Core
         {
             if (verb.ElementAt(0).Equals('}'))
                 return Verb.BlockClosing;
-            if (verb.Substring(0, 4).Equals("void"))
-                return Verb.ProcDeclaration;
             if (verb.Length >= 4)
+            {
+                if (verb.Substring(0, 4).Equals("void"))
+                    return Verb.ProcDeclaration;
                 if (verb.Substring(0, 2).Equals("if") || verb.Substring(0, 4).Equals("else"))
                     return Verb.Condition;
+            }
             if (!verb.Contains(';'))
                 return Verb.Unidentified;
             if (verb.HasEquatChar())
@@ -260,7 +262,7 @@ namespace C_to_NASM_Simulator_2._0.Core
                                     value = temp.InnerString(temp.IndexOf("<") + 1, temp.IndexOf(limiter)).Trim();
                                 else if (conditionSign.Contains(">"))
                                     value = temp.InnerString(temp.IndexOf(">") + 1, temp.IndexOf(limiter)).Trim();
-                                if (!value.ElementAt(0).Equals("'") && !Char.IsDigit(value.ElementAt(0)))
+                                if (!value.ElementAt(0).Equals('\'') && !Char.IsDigit(value.ElementAt(0)))
                                     if (!Utils.VarExists(value))
                                         return null;
                                     else value = $"[{value}]";                               
@@ -390,7 +392,7 @@ namespace C_to_NASM_Simulator_2._0.Core
             }
             if (arrValue.ElementAt(0).Equals('\''))
                 return "MOV AL, 0" + Environment.NewLine + "MOV AL, " + arrValue
-                        + Environment.NewLine + "MOV [" + arrName + "], AL";
+                        + Environment.NewLine + "MOV [" + arrName + "+" + valIndex + "], AL";
             else
             {
                 int val = int.MinValue;
@@ -398,9 +400,9 @@ namespace C_to_NASM_Simulator_2._0.Core
                 {
                     string declaredVar = initVars.SingleOrDefault(s => s.Substring(0, arrName.Length).Equals(arrName));
                     if (declaredVar.Contains(" DB ") || declaredVar.Contains(" RESB "))
-                        return val > 255 ? null : "MOV [" + arrName + "], " + arrValue;
+                        return val > 255 ? null : "MOV [" + arrName + "+" + valIndex + "], " + arrValue;
                     if (declaredVar.Contains(" DW ") || declaredVar.Contains(" RESW "))
-                        return val > 65535 ? null : "MOV [" + arrName + "], " + arrValue;
+                        return val > 65535 ? null : "MOV [" + arrName + "+" + valIndex + "*2" + "], " + arrValue;
                 }
             }
             return null;
@@ -547,7 +549,10 @@ namespace C_to_NASM_Simulator_2._0.Core
                 }
                 else
                 {
-                    _out += e.Current + Environment.NewLine + divOrMul + Environment.NewLine;
+                    if(char.IsLetter(e.Current.ElementAt(0)))
+                        _out += $"[{e.Current}]{Environment.NewLine}{divOrMul}{Environment.NewLine}";
+                    else 
+                        _out += e.Current + Environment.NewLine + divOrMul + Environment.NewLine;
                     divOrMul = String.Empty;
                 }            
             }
@@ -633,8 +638,8 @@ namespace C_to_NASM_Simulator_2._0.Core
                     {
                         if (inputVar.Contains('='))
                         {
-                            int firstValChar = inputVar.IndexOf('=') + 2;
-                            string arrValue = inputVar.InnerString(firstValChar, inputVar.Length - 1);
+                            int firstValChar = inputVar.IndexOf('=') + 1;
+                            string arrValue = inputVar.InnerString(firstValChar, inputVar.Length - 1).Trim();
                             int arrValIndex = _arrLength;
                             _arrName = inputVar.InnerString(0, inputVar.IndexOf('['));
                             if (_arrName.Contains(' ')) return null;
@@ -652,10 +657,10 @@ namespace C_to_NASM_Simulator_2._0.Core
             }
             if (inputVar.Contains("="))
             {
-                string varName = hasTypeDef==true ? inputVar.InnerString(firstSpace + 1, inputVar.IndexOf('=') - 1) 
-                    : inputVar.InnerString(0, inputVar.IndexOf('=') - 1);
-                int firstValChar = inputVar.IndexOf('=') + 2;
-                string varValue = inputVar.InnerString(firstValChar, inputVar.Length - 1);
+                string varName = hasTypeDef==true ? inputVar.InnerString(firstSpace, inputVar.IndexOf('=')).Trim() 
+                    : inputVar.InnerString(0, inputVar.IndexOf('=')).Trim();
+                int firstValChar = inputVar.IndexOf('=') + 1;
+                string varValue = inputVar.InnerString(firstValChar, inputVar.Length - 1).Trim();
                 if (Char.IsLetter(varValue.ElementAt(0))) return VarAssign(varName, varValue, hasTypeDef);
                 switch (varType)
                     {

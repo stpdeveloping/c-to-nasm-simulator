@@ -15,12 +15,14 @@ namespace C_to_NASM_Simulator_2._0
     /// </summary>
     public partial class MainWindow : Window
     {
-        ObservableCollection<String> ObservableLines = new ObservableCollection<String>();
+        public UserInterface ui = Emulator.UI;
 
         public MainWindow()
         {
             InitializeComponent();
-            OutputList.ItemsSource = ObservableLines;
+            OutputList.ItemsSource = ui.ObservableLines;
+            StackList.ItemsSource = ui.Stack;
+            DataContext = ui;
         }
 
         private void InputText_TextChanged(object sender, TextChangedEventArgs e)
@@ -59,8 +61,8 @@ namespace C_to_NASM_Simulator_2._0
 
         private void CompileButton_Click(object sender, RoutedEventArgs e)
         {
-            Utils.RefreshCompiler();
-            ObservableLines.Clear();
+            Utils.RefreshSimulator();
+            ui.ObservableLines.Clear();
             string input = new TextRange(InputText.Document.ContentStart, InputText.Document.ContentEnd).Text;
             var lines = input.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
             var compiledLines = new List<String>();
@@ -74,8 +76,16 @@ namespace C_to_NASM_Simulator_2._0
                 MessageBox.Show("Incorrect input!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             Utils.IfElseFix(Utils.StartLabelFix(compiledLines))
-                .ForEach(line => ObservableLines.Add(line));
-            OutputList.SelectedIndex = ObservableLines.IndexOf("START:");
+                .ForEach(line => ui.ObservableLines.Add(line));
+            OutputList.SelectedIndex = ui.ObservableLines.IndexOf("START:");
+            ui.ObservableLines.Add("HLT");
+            Utils.LoadVarsToEmu();
+        }
+
+        private void NextCmdButton_Click(object sender, RoutedEventArgs e)
+        {
+            var emu = new Emulator(this);
+            emu.NextStep();
         }
     }
 }

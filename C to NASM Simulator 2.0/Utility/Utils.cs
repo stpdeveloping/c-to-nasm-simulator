@@ -1,4 +1,5 @@
 ﻿using C_to_NASM_Simulator_2._0.Core;
+using C_to_NASM_Simulator_2._0.Types;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -47,13 +48,69 @@ namespace C_to_NASM_Simulator_2._0.Utility
                 });
             return stdOutput;
         }
+        public static void LoadVarsToEmu()
+        {
+            Compiler.initVars.ForEach(var =>
+            {
+                string type = var.InnerString(var.IndexOf(" "), var.LastIndexOf(" ")).Trim();
+                string name = var.InnerString(0, var.IndexOf(" ")).Trim();
+                string value = var.InnerString(var.LastIndexOf(" "), var.Length).Trim();
+                switch (type)
+                {
+                    case "RESB":
+                    case "DB":
+                        if (value.ElementAt(0).Equals('\''))
+                            Emulator.Chars.Add(new EmuVar<char>
+                            {
+                                Type = type,
+                                Name = name,
+                                Value = value.Replace("'", "").ElementAt(0)
+                            });
+                        else if (char.IsNumber(value.ElementAt(0)))
+                        {
+                            Emulator.Ints.Add(new EmuVar<int>
+                            {
+                                Type = type,
+                                Name = name,
+                                Value = string.IsNullOrWhiteSpace(value) ?
+                                0 : int.Parse(value)
+                            });
+                            Emulator.Chars.Add(new EmuVar<char>
+                            {
+                                Type = type,
+                                Name = name,
+                                Value = char.MinValue
+                            });
+                        }
+                        break;
+                    case "RESD":
+                    case "DD":
+                        Emulator.Floats.Add(new EmuVar<float>
+                        {
+                            Type = type,
+                            Name = name,
+                            Value = float.Parse(value.Replace(".", ","))
+                        });
+                        break;
+                    default:
+                        Emulator.Ints.Add(new EmuVar<int>
+                        {
+                            Type = type,
+                            Name = name,
+                            Value = int.TryParse(value, out int val) ? val : 0
+                        });
+                        break;
+                }
+            });
+        }
         public static bool VarExists(string varName)
         {
-            if (Compiler.initVars.SingleOrDefault(s => s.Substring(0, varName.Length).Equals(varName)) == null)
+            if (Compiler.initVars.SingleOrDefault(s => s.Substring(0, varName.Length)
+            .Equals(varName)) == null)
                 return false;
             return true;
         }
-        public static void RefreshCompiler()
+        public static void RefreshSimulator()
         {
             Compiler.initVars.Clear();
             Compiler.initProcedures.Clear();
@@ -61,6 +118,9 @@ namespace C_to_NASM_Simulator_2._0.Utility
             Compiler.labelsOutCount = 0;
             Compiler.conditionEndCount = 0;
             Compiler.bracketBalance = 0;
+            Emulator.Ints.Clear();
+            Emulator.Floats.Clear();
+            Emulator.Chars.Clear();
         }
     }
 }

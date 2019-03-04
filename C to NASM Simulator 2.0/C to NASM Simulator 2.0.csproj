@@ -56,6 +56,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\EmuCoreHandler.cs" />
+    <Compile Include="Core\Emulator.cs" />
+    <Compile Include="Core\UserInterface.cs" />
+    <Compile Include="Types\EmuVar.cs" />
+    <Compile Include="Types\MoveType.cs" />
+    <Compile Include="Types\NasmCommand.cs" />
     <Compile Include="Types\ProcVar.cs" />
     <Compile Include="Utility\SimulatorString.cs" />
     <Compile Include="Utility\Utils.cs" />
