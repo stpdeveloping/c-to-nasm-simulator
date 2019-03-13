@@ -16,7 +16,8 @@ namespace C_to_NASM_Simulator_2._0.Core
             {
                 case MoveType.RegisterToVar:
                     varName = op1.Replace("[", "").Replace("]", "");
-                    var registerValue = op2.Equals("AX") ? Emulator.UI.AX : Emulator.UI.BX;
+                    var registerValue = op2.Equals("AX") || op2.Equals("AL") ? 
+                        Emulator.UI.AX : Emulator.UI.BX;
                     return new KeyValuePair<string, int>(varName, registerValue);
                 case MoveType.NumValueToVar:
                     varName = op1.Replace("[", "").Replace("]", "");

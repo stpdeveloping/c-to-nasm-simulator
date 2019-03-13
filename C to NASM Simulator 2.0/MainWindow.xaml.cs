@@ -79,6 +79,8 @@ namespace C_to_NASM_Simulator_2._0
                 .ForEach(line => ui.ObservableLines.Add(line));
             OutputList.SelectedIndex = ui.ObservableLines.IndexOf("START:");
             ui.ObservableLines.Add("HLT");
+            /*string temp = string.Empty; for test purpose to view all lines in string
+            ui.ObservableLines.ToList().ForEach(str => temp += $"{str}{Environment.NewLine}");*/
             Utils.LoadVarsToEmu();
         }
 

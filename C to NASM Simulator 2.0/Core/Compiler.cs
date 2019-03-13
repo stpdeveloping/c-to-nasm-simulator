@@ -13,7 +13,7 @@ namespace C_to_NASM_Simulator_2._0.Core
         public static Dictionary<string, int> initProcedures = new Dictionary<string, int>();
         public static int labelsCount = -1;
         public static int labelsOutCount = 0;
-        public static int conditionEndCount = 0;
+        public static int conditionEndsCount = 0;
         public static int bracketBalance = 0;
 
         private static List<ProcVar> tempArgs = new List<ProcVar>();
@@ -34,16 +34,21 @@ namespace C_to_NASM_Simulator_2._0.Core
                     Output = ProcCall(codeLine);
                     break;
                 case Verb.BlockClosing:
-                    bracketBalance--;
-                    if (bracketBalance == 0)
-                        if (elseFlag)
-                        {
-                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}conditionEnd{conditionEndCount}:{Environment.NewLine}";
-                            elseFlag = false;
-                            conditionEndCount++;
-                        }
-                        else if(ifBlock && !elseFlag)
-                            Output = $"JMP conditionEnd{conditionEndCount}{Environment.NewLine}labelOut{labelsOutCount}:{Environment.NewLine}";
+                    if (!procedureFlag)
+                    {
+                        bracketBalance--;
+                        if (bracketBalance == 0)
+                            if (elseFlag)
+                            {
+                                Output = $"JMP conditionEnd{conditionEndsCount}{Environment.NewLine}conditionEnd{conditionEndsCount}:{Environment.NewLine}";
+                                elseFlag = false;
+                                conditionEndsCount++;
+                            }
+                            else if (ifBlock && !elseFlag)
+                                Output = $"JMP conditionEnd{conditionEndsCount}" +
+                                        $"{Environment.NewLine}labelOut{labelsOutCount}" +
+                                        $":{Environment.NewLine}";
+                    }
                     if (procedureFlag && tempArgs.Any())
                     {
                         tempArgs.Reverse();
@@ -74,6 +79,7 @@ namespace C_to_NASM_Simulator_2._0.Core
                     Output = NasmEquation(codeLine);
                     break;
                 case Verb.Condition:
+                    procedureFlag = false;
                     Output = NasmCondition(codeLine);
                     break;
             }
@@ -216,7 +222,7 @@ namespace C_to_NASM_Simulator_2._0.Core
             if (condition.Contains("if"))
             {
                 if (!condition.Contains("else if"))
-                    conditionEndCount++;
+                    conditionEndsCount++;
                 bracketBalance++;
                 if (bracketBalance<2)
                 labelsOutCount++;
@@ -396,7 +402,7 @@ namespace C_to_NASM_Simulator_2._0.Core
             else
             {
                 int val = int.MinValue;
-                if (int.TryParse(arrValue, out val))
+                if (int.TryParse(arrValue.Replace(";", ""), out val))
                 {
                     string declaredVar = initVars.SingleOrDefault(s => s.Substring(0, arrName.Length).Equals(arrName));
                     if (declaredVar.Contains(" DB ") || declaredVar.Contains(" RESB "))
@@ -430,7 +436,7 @@ namespace C_to_NASM_Simulator_2._0.Core
             else
             {
                 varName = equat.InnerString(0, equat.IndexOf('=') - 1);
-                if (initVars.SingleOrDefault(s => s.Contains(varName + " ")) == null)
+                if (initVars.FirstOrDefault(s => s.Contains(varName + " ")) == null)
                     return null;
             }
             if (!equat.Contains("(") || !equat.Contains(")"))
@@ -492,8 +498,8 @@ namespace C_to_NASM_Simulator_2._0.Core
                         _out += "MOV [" + varName + "], AX";
                         continue;
                     }
-                    if (isPlus)
-                    _out += "ADD [" + varName + "], AX";
+                    if (isPlus && parentheseCount > 1)
+                        _out += "ADD [" + varName + "], AX";
                     else if(!isPlus && parentheseCount > 1)
                     _out += "SUB [" + varName + "], AX";
                     else

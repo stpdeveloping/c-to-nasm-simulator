@@ -333,7 +333,8 @@ namespace C_to_NASM_Simulator_2._0.Core
                     }
                 });
                 operand2 = temp.Trim();
-            if (operand1.Equals("AX") || operand1.Equals("BX"))
+            if (operand1.Equals("AX") || operand1.Equals("BX") 
+                || operand1.Equals("AL") || operand1.Equals("BL"))
                 if (operand2.ElementAt(0).Equals('['))
                 {
                     CurrentArithmeticCmd = EmuCoreHandler.GetOperands(

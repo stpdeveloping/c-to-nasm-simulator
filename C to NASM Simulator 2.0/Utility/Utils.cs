@@ -20,7 +20,7 @@ namespace C_to_NASM_Simulator_2._0.Utility
 
         public static List<string> IfElseFix(List<string> stdOutput)
         {
-            int conditionCounter = Compiler.conditionEndCount;
+            int conditionCounter = Compiler.conditionEndsCount;
             var conditions = new List<int>();
             int i = 0;
             while (i <= conditionCounter)
@@ -105,7 +105,7 @@ namespace C_to_NASM_Simulator_2._0.Utility
         }
         public static bool VarExists(string varName)
         {
-            if (Compiler.initVars.SingleOrDefault(s => s.Substring(0, varName.Length)
+            if (Compiler.initVars.FirstOrDefault(s => s.Substring(0, varName.Length)
             .Equals(varName)) == null)
                 return false;
             return true;
@@ -116,7 +116,7 @@ namespace C_to_NASM_Simulator_2._0.Utility
             Compiler.initProcedures.Clear();
             Compiler.labelsCount = -1;
             Compiler.labelsOutCount = 0;
-            Compiler.conditionEndCount = 0;
+            Compiler.conditionEndsCount = 0;
             Compiler.bracketBalance = 0;
             Emulator.Ints.Clear();
             Emulator.Floats.Clear();
