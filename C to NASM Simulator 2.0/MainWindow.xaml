@@ -20,8 +20,29 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
-        <RichTextBox x:Name="InputText" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" FontSize="15" TextChanged="InputText_TextChanged" />
-        <ListView x:Name="OutputList" Grid.Column="2" Grid.Row="1" Width="180" Margin="12, 0, 0, 0">
+        <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5">
+            <MenuItem Header="Help">
+                <MenuItem Header="Documentation" Click="MenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/question-mark.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+        <RichTextBox x:Name="InputText" Grid.Column="1" Grid.Row="1" FontSize="15" TextChanged="InputText_TextChanged" Margin="0, 12, 0, 0" />
+        <DataGrid x:Name="MemoryStructure" ItemsSource="{Binding}" Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" Height="50" Margin="0, 12, 0, 0" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="*" Binding="{Binding M01}" Header="01" />
+                <DataGridTextColumn Width="*" Binding="{Binding M02}" Header="02" />
+                <DataGridTextColumn Width="*" Binding="{Binding M03}" Header="03" />
+                <DataGridTextColumn Width="*" Binding="{Binding M04}" Header="04" />
+                <DataGridTextColumn Width="*" Binding="{Binding M05}" Header="05" />
+                <DataGridTextColumn Width="*" Binding="{Binding M06}" Header="06" />
+                <DataGridTextColumn Width="*" Binding="{Binding M07}" Header="07" />
+                <DataGridTextColumn Width="*" Binding="{Binding M08}" Header="08" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <ListView x:Name="OutputList" Grid.Column="2" Grid.Row="1" Width="180" Margin="12, 12, 0, 0">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
@@ -30,12 +51,12 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button x:Name="CompileButton" FontSize="15" Grid.Column="2" Grid.Row="2" Padding="50, 2, 50, 2" 
-                Margin="12, 12, 0, 0" Click="CompileButton_Click" HorizontalAlignment="Left">
-            <Image Height="23" Source="Resources/compile.png"/>
+        <Button x:Name="CompileButton" FontSize="15" Grid.Column="3" Grid.Row="2" Padding="5, 2, 5, 2" 
+                Margin="12, 25, 0, 0" Click="CompileButton_Click" HorizontalAlignment="Left">
+            <Image Height="27" Source="Resources/compile.png"/>
         </Button>
-        <Button x:Name="NextCmdButton" Grid.Column="2" Padding="10, 2, 10, 2" Grid.Row="2" 
-                Margin="0, 12, 0, 0" Click="NextCmdButton_Click" HorizontalAlignment="Right">
+        <Button x:Name="NextCmdButton" Grid.Column="3" Padding="5, 2, 5, 2" Grid.Row="2" 
+                Margin="0, 25, 0, 0" Click="NextCmdButton_Click" HorizontalAlignment="Right">
             <Image Height="27" Source="Resources/next.png"/>
         </Button>
         <Grid Grid.Column="3" Grid.Row="1" Margin="12, 0, 0, 0">
@@ -49,18 +70,22 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Grid.Column="1" Grid.Row="0" Content="Registers" HorizontalAlignment="Center" 
                    Margin="0, 0, 0, 3"/>
-            <Label Grid.Column="0" Grid.Row="1" Margin="0, 0, 6, 0" Content="AX:"/>
+            <Label Grid.Column="0" Grid.Row="1" Margin="0, 0, 6, 0" Content="A:"/>
             <TextBox x:Name="AxRegister" Text="{Binding AX, UpdateSourceTrigger=PropertyChanged}" 
                      Grid.Column="1" Grid.Row="1" Padding="0, 0, 46, 0" IsEnabled="False"/>
-            <Label Grid.Column="0" Grid.Row="2" Content="BX:" Margin="0, 6, 0, 0"/>
+            <Label Grid.Column="0" Grid.Row="2" Content="B:" Margin="0, 6, 0, 0"/>
             <TextBox x:Name="BxRegister" Text="{Binding BX, UpdateSourceTrigger=PropertyChanged}"  
                      Grid.Column="1" Grid.Row="2" Margin="0, 6, 0, 0" IsEnabled="False" />
-            <Label Grid.Column="1" Grid.Row="3" Content="Stack" Margin="0, 0, 0, -3" HorizontalAlignment="Center"/>
-            <ListView x:Name="StackList" Grid.Column="1" Grid.Row="4" Grid.RowSpan="5"  Margin="0, 6, 0, 0" IsEnabled="False">
+            <Label Grid.Column="0" Grid.Row="3" Content="IP:" Margin="0, 6, 0, 0"/>
+            <TextBox x:Name="IpRegister" Text="{Binding IP, UpdateSourceTrigger=PropertyChanged}"  
+                     Grid.Column="1" Grid.Row="3" Margin="0, 6, 0, 0" IsEnabled="False" />
+            <Label Grid.Column="1" Grid.Row="4" Content="Stack" Margin="0, 0, 0, -3" HorizontalAlignment="Center"/>
+            <ListView x:Name="StackList" Grid.Column="1" Grid.Row="5" Grid.RowSpan="5"  Margin="0, 6, 0, 0" IsEnabled="False">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>

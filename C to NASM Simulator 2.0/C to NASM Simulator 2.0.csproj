@@ -60,6 +60,7 @@
     <Compile Include="Core\Emulator.cs" />
     <Compile Include="Core\UserInterface.cs" />
     <Compile Include="Types\EmuVar.cs" />
+    <Compile Include="Types\Memory.cs" />
     <Compile Include="Types\MoveType.cs" />
     <Compile Include="Types\NasmCommand.cs" />
     <Compile Include="Types\ProcVar.cs" />
@@ -102,6 +103,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Resources\Doc.docx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -118,6 +120,8 @@
   <ItemGroup>
     <Resource Include="Resources\restart.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Resources\question-mark.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

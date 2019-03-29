@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using C_to_NASM_Simulator_2._0.Types;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace C_to_NASM_Simulator_2._0.Core
 {
@@ -12,6 +8,10 @@ namespace C_to_NASM_Simulator_2._0.Core
     {
         private int ax;
         private int bx;
+        private int ip;
+
+        public Memory MemoryMap = new Memory();
+
         public int AX
         {
             get { return ax; }
@@ -31,8 +31,18 @@ namespace C_to_NASM_Simulator_2._0.Core
             }
         }
 
+        public int IP
+        {
+            get { return ip; }
+            set
+            {
+                ip = value;
+                OnPropertyChanged(nameof(ip));
+            }
+        }
+
         public ObservableCollection<string> ObservableLines = new ObservableCollection<string>();
-        public ObservableCollection<int> Stack = new ObservableCollection<int>();
+        public ObservableCollection<int> Stack = new ObservableCollection<int>();        
 
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged(string propertyName)

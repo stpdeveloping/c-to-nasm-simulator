@@ -103,12 +103,20 @@ namespace C_to_NASM_Simulator_2._0.Utility
                 }
             });
         }
+        public static string GetLineWithId(string toFind)
+        {
+            string withId = string.Empty;
+            Emulator.UI.ObservableLines.AsEnumerable().ToList().ForEach(line =>
+            {
+                if (line.Contains(toFind))
+                    withId = line;
+            });
+            return withId;
+        }
         public static bool VarExists(string varName)
         {
-            if (Compiler.initVars.FirstOrDefault(s => s.Substring(0, varName.Length)
-            .Equals(varName)) == null)
-                return false;
-            return true;
+            return Compiler.initVars.FirstOrDefault(s => s.Substring(0, varName.Length)
+            .Equals(varName)) == null ? false : true;
         }
         public static void RefreshSimulator()
         {
@@ -121,6 +129,8 @@ namespace C_to_NASM_Simulator_2._0.Utility
             Emulator.Ints.Clear();
             Emulator.Floats.Clear();
             Emulator.Chars.Clear();
+            Emulator.VarsInMemory.Clear();
+            Emulator.AvailableMemBlock = 1;
         }
     }
 }

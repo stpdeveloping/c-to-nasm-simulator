@@ -189,14 +189,17 @@ namespace C_to_NASM_Simulator_2._0.Core
             initProcedures.TryGetValue(procName, out int argsCount);
             if (argsCount > tempArgs.Count || argsCount < tempArgs.Count)
                 validation = false;
-            if(validation)
+            if (validation)
                 tempArgs.ForEach(arg =>
                 {
                     _out += $"MOV AX, [{NasmVar($"{arg.Type} {arg.Name};", true).InnerString(0, NasmVar($"{arg.Type} {arg.Name};", true).IndexOf(" ")).Trim()}]" +
                         $"{Environment.NewLine}PUSH AX{Environment.NewLine}";
                 });
             else
-            return null;
+            {
+                tempArgs.Clear();
+                return null;
+            }
             _out += $"CALL {procName}{Environment.NewLine}";
             tempArgs.Reverse();
             tempArgs.ForEach(arg =>
@@ -475,7 +478,6 @@ namespace C_to_NASM_Simulator_2._0.Core
             bool isPlus = true;
             bool isMulOrDiv = false;
             int parentheseCount = 0;
-            _out += "MOV AX, 0" + Environment.NewLine;
             while (e.MoveNext())
             {              
                 if (e.Current.Equals("("))

@@ -11,9 +11,12 @@ namespace C_to_NASM_Simulator_2._0.Core
         public static List<EmuVar<float>> Floats = new List<EmuVar<float>>();
         public static List<EmuVar<int>> Ints = new List<EmuVar<int>>();
         public static List<EmuVar<char>> Chars = new List<EmuVar<char>>();
+        public static List<EmuVar<int>> VarsInMemory = new List<EmuVar<int>>();
+        public static int AvailableMemBlock = 1;
+
         public static UserInterface UI = new UserInterface();
 
-        private MainWindow View;
+        private MainWindow View;       
         private string CurrentCommand;
 
         private static KeyValuePair<string, int> CurrentArithmeticCmd;
@@ -35,6 +38,7 @@ namespace C_to_NASM_Simulator_2._0.Core
         {
             var map = new Dictionary<NasmCommand, Action>
             {
+                { NasmCommand.NotHandled, VarHandler },
                 { NasmCommand.Copy, MovHandler },
                 { NasmCommand.Addition, AddHandler },
                 { NasmCommand.Subtraction, SubHandler },
@@ -45,13 +49,61 @@ namespace C_to_NASM_Simulator_2._0.Core
                 { NasmCommand.Push, () => StackHandler(NasmCommand.Push) },
                 { NasmCommand.Pop, () => StackHandler(NasmCommand.Pop) },
                 { NasmCommand.Return, RetHandler },
-                { NasmCommand.Caller, CallHandler },
-                { NasmCommand.NotHandled, IncreaseIndex }
+                { NasmCommand.Caller, CallHandler }
             };
-            CurrentCommand = View.OutputList.SelectedValue.ToString();
+            string cmdWithIndex = View.OutputList.SelectedValue.ToString();
+            CurrentCommand = cmdWithIndex.InnerString(cmdWithIndex.IndexOf(" ") + 1, cmdWithIndex.Length);
             map.TryGetValue(CmdCheck(CurrentCommand), out Action ProperHandler);
             ProperHandler();
+            UI.IP = View.OutputList.SelectedIndex;
         }
+        private void MemoryMapHandler(int memoryIndex, int value)
+        {
+            switch(memoryIndex)
+            {
+                    case 1:
+                        UI.MemoryMap.M01 = value;
+                        break;
+                    case 2:
+                        UI.MemoryMap.M02 = value;
+                        break;
+                    case 3:
+                        UI.MemoryMap.M03 = value;
+                        break;
+                    case 4:
+                        UI.MemoryMap.M04 = value;
+                        break;
+                    case 5:
+                        UI.MemoryMap.M05 = value;
+                        break;
+                    case 6:
+                        UI.MemoryMap.M06 = value;
+                        break;
+                    case 7:
+                        UI.MemoryMap.M07 = value;
+                        break;
+                    case 8:
+                        UI.MemoryMap.M08 = value;
+                        break;
+            }
+        
+        }
+
+        private void VarHandler()
+        {            
+            if (CurrentCommand.Contains("DW") || CurrentCommand.Contains("RESW"))
+            {
+                string varName = CurrentCommand.InnerString(0, CurrentCommand.IndexOf(" ")).Trim();
+                var _int = Ints.FirstOrDefault(Int => Int.Name == varName);
+                _int.MemoryIndex = AvailableMemBlock;
+                VarsInMemory.Add(_int);
+                MemoryMapHandler(AvailableMemBlock, _int.Value);
+                AvailableMemBlock++;
+                View.MemoryStructure.Items.Refresh();
+            }
+            IncreaseIndex();
+        }
+
         private void MovHandler()
         {
             PrepareOperands(CurrentCommand.Replace("MOV", ""));
@@ -80,6 +132,9 @@ namespace C_to_NASM_Simulator_2._0.Core
                                 temp.Type = "DW";
                             }
                             temp.Value = operandsPair.Value;
+                            EmuVar<int> mem = VarsInMemory.First(var => var.Name == temp.Name);
+                            MemoryMapHandler(mem.MemoryIndex, temp.Value);
+                            View.MemoryStructure.Items.Refresh();
                             Ints.Remove(Ints.First(Int => Int.Name == operandsPair.Key));
                             Ints.Add(temp);
                         }
@@ -142,6 +197,9 @@ namespace C_to_NASM_Simulator_2._0.Core
                                 temp.Type = "DW";
                             }
                             temp.Value += operandsPair.Value;
+                            EmuVar<int> mem = VarsInMemory.First(var => var.Name == temp.Name);
+                            MemoryMapHandler(mem.MemoryIndex, temp.Value);
+                            View.MemoryStructure.Items.Refresh();
                             Ints.Remove(Ints.First(Int => Int.Name == operandsPair.Key));
                             Ints.Add(temp);
                         }
@@ -203,6 +261,9 @@ namespace C_to_NASM_Simulator_2._0.Core
                                 temp.Type = "DW";
                             }
                             temp.Value -= operandsPair.Value;
+                            EmuVar<int> mem = VarsInMemory.First(var => var.Name == temp.Name);
+                            MemoryMapHandler(mem.MemoryIndex, temp.Value);
+                            View.MemoryStructure.Items.Refresh();
                             Ints.Remove(Ints.First(Int => Int.Name == operandsPair.Key));
                             Ints.Add(temp);
                         }
@@ -262,7 +323,8 @@ namespace C_to_NASM_Simulator_2._0.Core
                 .InnerString(CurrentCommand.IndexOf(" "), CurrentCommand.Length)
                 .Trim();
             map.TryGetValue(CurrentJump, out bool isConditionMet);
-            View.OutputList.SelectedIndex = isConditionMet ? UI.ObservableLines.IndexOf($"{label}:") :
+            View.OutputList.SelectedIndex = isConditionMet ? 
+                UI.ObservableLines.IndexOf(Utils.GetLineWithId($"{label}:")) :
                     View.OutputList.SelectedIndex + 1;
             equalsFlag = false;
             greaterFlag = false;
@@ -306,13 +368,15 @@ namespace C_to_NASM_Simulator_2._0.Core
         }
         private void RetHandler()
         {
-            View.OutputList.SelectedIndex = UI.ObservableLines.IndexOf($"CALL { CallingFunction }");
+            View.OutputList.SelectedIndex = 
+                UI.ObservableLines.IndexOf(Utils.GetLineWithId($"CALL { CallingFunction }"));
             IncreaseIndex();
         }
         private void CallHandler()
         {
             CallingFunction = CurrentCommand.Replace("CALL ", "");
-            View.OutputList.SelectedIndex = UI.ObservableLines.IndexOf($"{ CallingFunction }:");
+            View.OutputList.SelectedIndex = 
+                UI.ObservableLines.IndexOf(Utils.GetLineWithId($"{ CallingFunction }:"));
         }
         private void IncreaseIndex()
         {
@@ -402,6 +466,7 @@ namespace C_to_NASM_Simulator_2._0.Core
                 { "RET", NasmCommand.Return },
                 { "CALL", NasmCommand.Caller }
             };
+
             if (cmd.Length >= 4)
                 if (map.TryGetValue(cmd.Substring(0, 4), out NasmCommand type))
                     return type;
